@@ -1,5 +1,5 @@
 [package]
-name = "cotton-server"
+name = "cotton-protocol"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,9 +7,5 @@ edition = "2021"
 
 [dependencies]
 essentials = { path = "../essentials", package = "cotton-essentials" }
-protocol = { path = "../protocol", package = "cotton-protocol" }
 anyhow = "1.0.56"
-pretty-hex = "0.2.1"
-log = "0.4.16"
-getset = "0.1.2"
-nuid = "0.3.2"
+byteorder = "1.4.3"
