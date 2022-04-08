@@ -6,7 +6,7 @@ use crate::io::VarInt;
 pub mod incoming;
 
 pub trait Packet {
-    fn handle(context: &Context) -> Result<()>;
+    fn handle(&self, context: &Context) -> Result<()>;
 }
 
 macro_rules! user_type {
@@ -40,6 +40,19 @@ macro_rules! packet_enum {
                     )*
                 }
             }
+
+            /// Process the current packet
+            pub fn process(&self, ctx: &Context) -> anyhow::Result<()> {
+                match self {
+                    $(
+                        $ident::$packet(p) => {
+                            log::debug!("handling packet [{:#02x}]({})", $id, stringify!($packet));
+
+                            p.handle(ctx)
+                        },
+                    )*
+                }
+            }
         }
 
         impl crate::io::Readable for $ident {
@@ -65,7 +78,7 @@ macro_rules! packet {
             $(
                 $field:ident $typ:ident $(<$generics:ident>)?
             );* $(;)?
-        }, $context:ident -> $($body:tt)*
+        }, ($self:ident , $context:ident) -> $($body:tt)*
     ) => {
         #[derive(Debug, Clone)]
         pub struct $packet {
@@ -97,8 +110,9 @@ macro_rules! packet {
 
         #[allow(unused_imports, unused_variables)]
         impl Packet for $packet {
-            fn handle(context: &Context) -> anyhow::Result<()> {
+            fn handle(&self, context: &Context) -> anyhow::Result<()> {
                 let $context = context;
+                let $self = self;
 
                 $($body)*
             }

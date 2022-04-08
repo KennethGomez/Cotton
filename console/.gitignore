@@ -14,4 +14,4 @@ Cargo.lock
 *.pdb
 
 # Environment file
-.env
+../.env

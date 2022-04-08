@@ -2,8 +2,8 @@ use std::env;
 use std::net::IpAddr;
 use std::str::FromStr;
 
-use getset::{Getters, CopyGetters};
 use anyhow::Result;
+use getset::{CopyGetters, Getters};
 
 #[derive(Getters, Debug)]
 pub struct CottonConfiguration {

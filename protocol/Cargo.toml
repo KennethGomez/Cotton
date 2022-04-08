@@ -9,3 +9,4 @@ edition = "2021"
 essentials = { path = "../essentials", package = "cotton-essentials" }
 anyhow = "1.0.56"
 byteorder = "1.4.3"
+log = "0.4.16"

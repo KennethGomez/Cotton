@@ -1,8 +1,12 @@
-use std::io::{BufReader, BufWriter, Read};
+use std::io::{BufReader, BufWriter, Cursor, Read};
 use std::net::{Shutdown, SocketAddr, TcpStream};
 use std::sync::Mutex;
 
 use anyhow::Result;
+use byteorder::ReadBytesExt;
+use essentials::app::Context;
+use protocol::io::{Readable, VarInt};
+use protocol::packets::incoming::ClientHandshakePacket;
 
 use crate::tools::{print_packet, trace};
 
@@ -14,9 +18,18 @@ pub(crate) enum ClientChannelSignal {
     Shutdown,
 }
 
+#[derive(PartialEq)]
+pub(crate) enum ClientStatus {
+    Handshake,
+    Status,
+    Login,
+    Play,
+}
+
 pub(crate) struct ClientChannel {
     reader: BufReader<TcpStream>,
     writer: BufWriter<TcpStream>,
+    status: ClientStatus,
 }
 
 impl ClientChannel {
@@ -24,6 +37,7 @@ impl ClientChannel {
         Ok(Self {
             reader: BufReader::new(tcp_stream.try_clone()?),
             writer: BufWriter::new(tcp_stream),
+            status: ClientStatus::Handshake,
         })
     }
 
@@ -68,7 +82,29 @@ impl ClientChannel {
             print_packet(&packet);
         }
 
+        self.process_packet(&packet)?;
+
         Ok(ClientChannelSignal::KeepAlive)
+    }
+
+    fn process_packet(&self, data: &[u8]) -> Result<()> {
+        let mut cursor = Cursor::new(data);
+
+        match self.status {
+            ClientStatus::Handshake => {
+                // For some reason we have to ignore first byte
+                cursor.read_u8()?;
+
+                let packet = ClientHandshakePacket::read(&mut cursor)?;
+
+                packet.process(&Context)?
+            }
+            ClientStatus::Status => {}
+            ClientStatus::Login => {}
+            ClientStatus::Play => {}
+        }
+
+        Ok(())
     }
 
     pub(crate) fn shutdown(&self) -> Result<()> {

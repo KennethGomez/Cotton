@@ -48,7 +48,6 @@ impl VarInt {
                 break;
             }
         }
-
         Ok(VarInt(result))
     }
 }

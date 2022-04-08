@@ -2,8 +2,8 @@ use crate::packets::*;
 
 packet!(Handshake {
     protocol_version VarInt;
-}, ctx -> {
-    println!("handling handshake");
+}, (p, ctx) -> {
+    println!("handling handshake {}", p.protocol_version);
 
     Ok(())
 });
