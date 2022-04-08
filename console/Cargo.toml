@@ -1,8 +1,12 @@
 [package]
-name = "console"
+name = "cotton-console"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+server = { path = "../server", package = "cotton-server" }
+essentials = { path = "../essentials", package = "cotton-essentials" }
+dotenv = "0.15.0"
+log = "0.4.16"
