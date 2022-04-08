@@ -48,6 +48,12 @@ macro_rules! packet_enum {
                         $ident::$packet(p) => {
                             log::debug!("handling packet [{:#02x}]({})", $id, stringify!($packet));
 
+                            let data = format!("{}", p);
+
+                            for line in data.lines() {
+                                log::trace!("{}", line);
+                            }
+
                             p.handle(ctx)
                         },
                     )*
@@ -76,7 +82,7 @@ macro_rules! packet {
     (
         $packet:ident {
             $(
-                $field:ident $typ:ident $(<$generics:ident>)?
+                $field:ident : $typ:ident $(<$generics:ident>)?
             );* $(;)?
         }, ($self:ident , $context:ident) -> $($body:tt)*
     ) => {
@@ -115,6 +121,18 @@ macro_rules! packet {
                 let $self = self;
 
                 $($body)*
+            }
+        }
+
+        impl ::std::fmt::Display for $packet {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+                write!(f, "{} {{\n", stringify!($packet))?;
+                $(
+                    write!(f, "\t{}: {}\n", stringify!($field), self.$field)?;
+                )*
+                write!(f, "}}")?;
+
+                Ok(())
             }
         }
     };

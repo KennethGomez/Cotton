@@ -1,8 +1,8 @@
 use std::io;
 use std::io::{Cursor, Read};
 
-use anyhow::Result;
-use byteorder::ReadBytesExt;
+use anyhow::{Context, Result};
+use byteorder::{BigEndian, ReadBytesExt};
 
 /// Trait implemented for types which can be read
 /// from a buffer.
@@ -61,5 +61,63 @@ impl From<VarInt> for i32 {
 impl From<i32> for VarInt {
     fn from(x: i32) -> Self {
         Self(x)
+    }
+}
+
+macro_rules! integer_impl {
+    ($($int:ty, $read_fn:tt),* $(,)?) => {
+        $(
+            impl Readable for $int {
+                fn read(buffer: &mut Cursor<&[u8]>) -> anyhow::Result<Self> {
+                    buffer.$read_fn::<BigEndian>().map_err(anyhow::Error::from)
+                }
+            }
+        )*
+    }
+}
+
+integer_impl! {
+    u16, read_u16,
+    u32, read_u32,
+    u64, read_u64,
+
+    i16, read_i16,
+    i32, read_i32,
+    i64, read_i64,
+
+    f32, read_f32,
+    f64, read_f64,
+}
+
+impl Readable for String {
+    fn read(buffer: &mut Cursor<&[u8]>) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
+        // Length is encoded as VarInt.
+        // Following `length` bytes are the UTF8-encoded
+        // string.
+
+        let length = VarInt::read(buffer)
+            .context("failed to read string length")?
+            .0 as usize;
+
+        // TODO: support custom length limits
+        // Current max length is max value of a signed 16-bit int.
+        let max_length = std::i16::MAX as usize;
+        if length > max_length {
+            log::error!(
+                "string length {} exceeds maximum allowed length of {}",
+                length,
+                max_length
+            );
+        }
+
+        // Read string into buffer.
+        let mut temp = vec![0u8; length];
+        buffer.read_exact(&mut temp)?;
+        let s = std::str::from_utf8(&temp).context("string contained invalid UTF8")?;
+
+        Ok(s.to_owned())
     }
 }
